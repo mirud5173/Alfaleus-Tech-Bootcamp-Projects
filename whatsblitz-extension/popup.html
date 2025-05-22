@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>WhatsBlitz Upload</title>
+  <style>
+    body { font-family: Arial, sans-serif; padding: 10px; width: 300px; }
+    #drop-area {
+      border: 2px dashed #ccc;
+      padding: 20px;
+      text-align: center;
+      cursor: pointer;
+      margin-bottom: 15px;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 10px;
+    }
+    th, td {
+      border: 1px solid #ddd;
+      padding: 5px;
+      font-size: 14px;
+    }
+  </style>
+</head>
+<body>
+  <h3>Upload Contacts File</h3>
+  <div id="drop-area">Drag & drop a CSV/XLSX file here, or click to select</div>
+  <input type="file" id="fileElem" accept=".csv, application/vnd.openxmlformats-officedocument.spreadsheetml.sheet, application/vnd.ms-excel" style="display:none" />
+  
+  <table id="preview-table" style="display:none">
+    <thead>
+      <tr><th>Name</th><th>Number</th><th>Message</th></tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+  <script src="sheetjs/xlsx.full.min.js"></script>
+  <script src="popup.js"></script>
+</body>
+</html>
