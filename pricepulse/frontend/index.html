@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>PricePulse - E-Commerce Price Tracker</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="container">
+    <h1>PricePulse - E-Commerce Price Tracker</h1>
+
+    <form id="track-form">
+      <label for="url">Enter Amazon Product URL:</label>
+      <div class="form-row">
+        <input type="url" id="url" placeholder="https://www.amazon.in/dp/..." required />
+        <button type="submit">Track</button>
+      </div>
+    </form>
+
+    <div class="section">
+      <h2>Product Preview:</h2>
+      <div class="product-preview">
+        <div class="image-box"></div>
+        <div class="product-details">
+          <strong>Samsung Galaxy M14</strong><br />
+          Current Price: ₹13,499
+        </div>
+      </div>
+    </div>
+
+    <div class="section">
+      <h2>Price History Graph:</h2>
+      <div class="graph-box">[Graph Placeholder]</div>
+    </div>
+
+    <div class="section">
+      <h2>Available on Other Platforms:</h2>
+      <div class="platform-box">
+        <p>- Flipkart: ₹13,299</p>
+        <p>- Meesho: ₹13,499</p>
+        <p>- BigBasket: Not Available</p>
+      </div>
+    </div>
+  </div>
+</body>
+</html>
