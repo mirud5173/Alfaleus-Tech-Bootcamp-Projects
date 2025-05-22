@@ -1,9 +1,9 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+  <link rel="stylesheet" href="/static/styles.css" />
   <meta charset="UTF-8" />
   <title>PricePulse - E-Commerce Price Tracker</title>
-  <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
   <div class="container">
@@ -22,8 +22,8 @@
       <div class="product-preview">
         <div class="image-box"></div>
         <div class="product-details">
-          <strong>Samsung Galaxy M14</strong><br />
-          Current Price: ₹13,499
+          <strong id="product-title">[Title will appear here]</strong><br />
+          <span id="product-price">Current Price: ₹--</span>
         </div>
       </div>
     </div>
@@ -42,5 +42,38 @@
       </div>
     </div>
   </div>
+  <script>
+  const form = document.getElementById('track-form');
+
+  form.addEventListener('submit', async (e) => {
+  e.preventDefault(); // prevent page reload
+
+  const urlInput = document.getElementById('url');
+  const url = urlInput.value;
+
+  // Send URL to backend /scrape endpoint
+  const response = await fetch('/scrape', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({ url })
+  });
+
+  const data = await response.json();
+  console.log("Scrape result:", data);
+
+  // Update page with scraped product info
+  if (data.title && data.price) {
+    document.getElementById('product-title').textContent = data.title;
+    document.getElementById('product-price').textContent = `Current Price: ${data.price}`;
+  } else if (data.error) {
+    alert("Failed to scrape product: " + data.error);
+  } else {
+    alert("Unexpected response from server.");
+  }
+  });
+  </script>
+
 </body>
 </html>
