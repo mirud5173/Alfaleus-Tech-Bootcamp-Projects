@@ -68,4 +68,3 @@ class URLItem(BaseModel):
 async def scrape_endpoint(item: URLItem):
     result = await scrape_product(item.url, conn)
     return result
-
