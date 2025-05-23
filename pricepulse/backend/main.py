@@ -16,4 +16,3 @@ async def serve_index():
 
 # Register the /scrape POST route
 app.include_router(scraper.app)
-
