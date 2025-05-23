@@ -1,6 +1,7 @@
+console.log("chrome.runtime is", chrome.runtime);
+
 document.addEventListener("mouseup", (e) => {
   const target = e.target;
-
   if (
     target &&
     (target.id === "web2sheet-save-btn" || target.classList.contains("web2sheet-color-btn"))
@@ -15,6 +16,16 @@ document.addEventListener("mouseup", (e) => {
     removeElements();
   }
 });
+
+function getMetadata(selectedText, color) {
+  return {
+    text: selectedText,
+    title: document.title,
+    url: window.location.href,
+    timestamp: new Date().toISOString(),
+    color: color || "None"
+  };
+}
 
 function showSaveButton(text, x, y) {
   removeElements();
@@ -46,7 +57,14 @@ function showColorPicker(selectedText, button) {
   removeColorPicker();
 
   const rect = button.getBoundingClientRect();
-  const colors = ["#f44336", "#2196f3", "#4caf50", "#ff9800", "#9c27b0"]; // red, blue, green, orange, purple
+  const colors = ["#f44336", "#2196f3", "#4caf50", "#ff9800", "#9c27b0"];
+  const colorNames = {
+    "#f44336": "Red",
+    "#2196f3": "Blue",
+    "#4caf50": "Green",
+    "#ff9800": "Orange",
+    "#9c27b0": "Purple"
+  };
 
   const wrapper = document.createElement("div");
   wrapper.id = "web2sheet-color-picker";
@@ -74,25 +92,19 @@ function showColorPicker(selectedText, button) {
     colorBtn.style.cursor = "pointer";
 
     colorBtn.addEventListener("click", () => {
-    // Map color hex to names for clearer console logs
-    const colorNames = {
-        "#f44336": "Red",
-        "#2196f3": "Blue",
-        "#4caf50": "Green",
-        "#ff9800": "Orange",
-        "#9c27b0": "Purple"
-    };
+      const colorName = colorNames[color] || color;
 
-    const colorName = colorNames[color] || color; // fallback to hex if no name found
+      console.log(`Highlighted Text: %c${selectedText}`, `background-color: ${color}; color: #000; padding: 2px 4px; border-radius: 2px;`);
+      console.log(`Color used: ${colorName}`);
 
-    console.log(`Highlighted Text: %c${selectedText}`, `background-color: ${color}; color: #000; padding: 2px 4px; border-radius: 2px;`);
-    console.log(`Color used: ${colorName}`);
+      highlightSelection(color);
+      showToast("Saved with highlight!");
 
-    highlightSelection(color);
-    showToast("Saved with highlight!");
-    removeElements();
+      const metadata = getMetadata(selectedText, colorName);
+      sendToSheet(metadata);
+
+      removeElements();
     });
-
 
     wrapper.appendChild(colorBtn);
   });
@@ -105,11 +117,8 @@ function highlightSelection(color) {
   if (!selection.rangeCount) return;
 
   const range = selection.getRangeAt(0);
-
-  // Extract the selected content
   const extractedContent = range.extractContents();
 
-  // Create a span and wrap the extracted content
   const span = document.createElement("span");
   span.style.backgroundColor = color;
   span.style.borderRadius = "3px";
@@ -117,23 +126,8 @@ function highlightSelection(color) {
   span.style.color = "#000";
   span.appendChild(extractedContent);
 
-  // Insert the span in place of the extracted content
   range.insertNode(span);
-
-  // Clear selection (optional, for UX)
   selection.removeAllRanges();
-}
-
-
-function removeElements() {
-  const btn = document.getElementById("web2sheet-save-btn");
-  if (btn) btn.remove();
-  removeColorPicker();
-}
-
-function removeColorPicker() {
-  const picker = document.getElementById("web2sheet-color-picker");
-  if (picker) picker.remove();
 }
 
 function showToast(message) {
@@ -164,6 +158,30 @@ function showToast(message) {
       toast.remove();
     }, 300);
   }, 2000);
+}
+
+function removeElements() {
+  const btn = document.getElementById("web2sheet-save-btn");
+  if (btn) btn.remove();
+  removeColorPicker();
+}
+
+function removeColorPicker() {
+  const picker = document.getElementById("web2sheet-color-picker");
+  if (picker) picker.remove();
+}
+
+// 🔄 Step 3: Send metadata to background script
+function sendToSheet(metadata) {
+  chrome.runtime.sendMessage({ action: "save_to_sheet", data: metadata }, (response) => {
+    if (chrome.runtime.lastError) {
+      console.error("Error sending message:", chrome.runtime.lastError);
+      showToast("❌ Failed to send to sheet.");
+    } else {
+      console.log("✅ Data sent to background script:", metadata);
+      showToast("✅ Data sent to sheet!");
+    }
+  });
 }
 
 console.log("✅ Web-to-Sheet Content Script loaded");
