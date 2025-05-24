@@ -1,8 +1,7 @@
 from fastapi import FastAPI
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
-from scraper import scrape_endpoint  # Importing the scrape endpoint
-import scraper
+from scraper import app as scraper_app  # Import router from scraper
 
 app = FastAPI()
 
@@ -14,5 +13,5 @@ app.mount("/static", StaticFiles(directory="../frontend"), name="static")
 async def serve_index():
     return FileResponse("../frontend/index.html")
 
-# Register the /scrape POST route
-app.include_router(scraper.app)
+# Register the /scrape and /history endpoints
+app.include_router(scraper_app)
