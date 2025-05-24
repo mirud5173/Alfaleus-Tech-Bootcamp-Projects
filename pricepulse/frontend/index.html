@@ -4,7 +4,9 @@
   <link rel="stylesheet" href="/static/styles.css" />
   <meta charset="UTF-8" />
   <title>PricePulse - E-Commerce Price Tracker</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
+
 <body>
   <div class="container">
     <h1>PricePulse - E-Commerce Price Tracker</h1>
@@ -20,7 +22,6 @@
     <div class="section">
       <h2>Product Preview:</h2>
       <div class="product-preview">
-        <div class="image-box"></div>
         <div class="product-details">
           <strong id="product-title">[Title will appear here]</strong><br />
           <span id="product-price">Current Price: ₹--</span>
@@ -30,7 +31,9 @@
 
     <div class="section">
       <h2>Price History Graph:</h2>
-      <div class="graph-box">[Graph Placeholder]</div>
+      <div class="graph-box">
+        <canvas id="priceChart" width="400" height="200"></canvas>
+      </div>
     </div>
 
     <div class="section">
@@ -42,38 +45,54 @@
       </div>
     </div>
   </div>
+
+  <script src="/static/chart.js"></script>
   <script>
-  const form = document.getElementById('track-form');
+    const form = document.getElementById('track-form');
+    let currentUrl = null;
+    let currentTitle = null;
 
-  form.addEventListener('submit', async (e) => {
-  e.preventDefault(); // prevent page reload
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      currentUrl = document.getElementById('url').value;
 
-  const urlInput = document.getElementById('url');
-  const url = urlInput.value;
+      // Fetch initial scrape
+      const response = await fetch('/scrape', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ url: currentUrl })
+      });
 
-  // Send URL to backend /scrape endpoint
-  const response = await fetch('/scrape', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify({ url })
-  });
+      const data = await response.json();
+      console.log("Scrape result:", data);
 
-  const data = await response.json();
-  console.log("Scrape result:", data);
+      if (data.title) {
+        currentTitle = data.title;
+        document.getElementById('product-title').textContent = data.title;
+        document.getElementById('product-price').textContent = data.price ? `Current Price: ${data.price}` : "Current Price: Not Available";
 
-  // Update page with scraped product info
-  if (data.title && data.price) {
-    document.getElementById('product-title').textContent = data.title;
-    document.getElementById('product-price').textContent = `Current Price: ${data.price}`;
-  } else if (data.error) {
-    alert("Failed to scrape product: " + data.error);
-  } else {
-    alert("Unexpected response from server.");
-  }
-  });
+        // Reset accumulatedHistory and tracking time
+        accumulatedHistory = [];
+        startTrackingTime = new Date();
+
+        // Push initial price point
+        if (data.price) {
+          accumulatedHistory.push({
+            timestamp: startTrackingTime.toISOString(),
+            price: parseFloat(data.price.replace(/[^\d.]/g, '')) // Clean ₹ symbol
+          });
+          renderChart(accumulatedHistory);
+        }
+
+        // Clear previous interval
+        if (window.updateInterval) clearInterval(window.updateInterval);
+
+        // Start new interval
+        window.updateInterval = setInterval(() => updateChart(currentUrl), 60000); // 1 min
+      } else {
+        alert("Failed to scrape product: " + (data.error || "Unknown error"));
+      }
+    });
   </script>
-
 </body>
 </html>
