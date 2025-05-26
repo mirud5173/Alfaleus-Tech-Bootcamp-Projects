@@ -1,5 +1,7 @@
 console.log("chrome.runtime is", chrome.runtime);
 
+let lastSavedText = ""; // Prevent duplicate saves
+
 document.addEventListener("mouseup", (e) => {
   const target = e.target;
   if (
@@ -33,9 +35,19 @@ function showSaveButton(text, x, y) {
   const btn = document.createElement("button");
   btn.id = "web2sheet-save-btn";
   btn.innerText = "Save to Sheet";
+
+  // Viewport bounds for better placement
+  const viewportWidth = window.innerWidth;
+  const viewportHeight = window.innerHeight;
+  const buttonWidth = 120;
+  const buttonHeight = 40;
+
+  const clampedX = Math.min(x, viewportWidth - buttonWidth);
+  const clampedY = Math.min(y, viewportHeight - buttonHeight);
+
   btn.style.position = "absolute";
-  btn.style.top = `${y + 10}px`;
-  btn.style.left = `${x}px`;
+  btn.style.top = `${clampedY + 10}px`;
+  btn.style.left = `${clampedX}px`;
   btn.style.zIndex = "9999";
   btn.style.padding = "8px 12px";
   btn.style.borderRadius = "5px";
@@ -96,6 +108,16 @@ function showColorPicker(selectedText, button) {
 
       console.log(`Highlighted Text: %c${selectedText}`, `background-color: ${color}; color: #000; padding: 2px 4px; border-radius: 2px;`);
       console.log(`Color used: ${colorName}`);
+
+      if (!selectedText || selectedText.length < 5) {
+        showToast("⚠️ Selection too short!");
+        return;
+      }
+
+      if (selectedText === lastSavedText) {
+        showToast("⚠️ Already saved this selection.");
+        return;
+      }
 
       highlightSelection(color);
       showToast("Saved with highlight!");
@@ -171,17 +193,28 @@ function removeColorPicker() {
   if (picker) picker.remove();
 }
 
-// 🔄 Step 3: Send metadata to background script
 function sendToSheet(metadata) {
-  chrome.runtime.sendMessage({ action: "save_to_sheet", data: metadata }, (response) => {
-    if (chrome.runtime.lastError) {
-      console.error("Error sending message:", chrome.runtime.lastError);
-      showToast("❌ Failed to send to sheet.");
-    } else {
-      console.log("✅ Data sent to background script:", metadata);
-      showToast("✅ Data sent to sheet!");
+  try {
+    if (!chrome.runtime?.id) {
+      console.warn("Extension context invalidated: chrome.runtime.id is undefined");
+      showToast("❌ Extension context lost. Try again.");
+      return;
     }
-  });
+
+    chrome.runtime.sendMessage({ action: "save_to_sheet", data: metadata }, (response) => {
+      if (chrome.runtime.lastError) {
+        console.error("Error sending message:", chrome.runtime.lastError);
+        showToast("❌ Failed to send to sheet.");
+      } else {
+        lastSavedText = metadata.text;
+        console.log("✅ Data sent to background script:", metadata);
+        showToast("✅ Data sent to sheet!");
+      }
+    });
+  } catch (err) {
+    console.error("Caught error while sending to sheet:", err);
+    showToast("❌ Unexpected error. Please refresh and try again.");
+  }
 }
 
 console.log("✅ Web-to-Sheet Content Script loaded");
